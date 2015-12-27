@@ -13,7 +13,7 @@ module Eiger
       return unless HTTP_METHODS.include?(http_method)
 
       action    = method_name(http_method, path) unless action
-      klass     = Controller.get_childe_or_self(class_name)
+      klass     = Controller.get_child_or_self(class_name)
       route     = Route.new(path, klass, action, &block)
 
       (@routes[http_method] ||= []) << route if route.valid?

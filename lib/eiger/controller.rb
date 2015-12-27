@@ -27,7 +27,7 @@ module Eiger
         "#{path}/:id"
       end
 
-      def get_childe_or_self(class_name)
+      def get_child_or_self(class_name)
         return self unless class_name
 
         name = class_name.to_s.split('_').map(&:capitalize).join
