@@ -51,40 +51,4 @@ describe Eiger::Base, type: :controller do
       end
     end
   end
-
-  describe '#get_route' do
-    let(:base) { Eiger::Base }
-
-    context 'String path' do
-      let(:path) { '/name/:name' }
-
-      before do
-        base.add_route('GET', path)
-      end
-
-      it 'returns route' do
-        expect(base.get_route('GET', '/name/hello')).to eq path
-      end
-
-      it 'returns nil' do
-        expect(base.get_route('GET', '/name/')).to eq nil
-      end
-    end
-
-    context 'Regexp path' do
-      let(:path) { %r{^\/(name|test)$} }
-
-      before do
-        base.add_route('GET', path)
-      end
-
-      it 'returns route' do
-        expect(base.get_route('GET', '/name')).to eq path
-      end
-
-      it 'returns nil' do
-        expect(base.get_route('GET', '/names')).to eq nil
-      end
-    end
-  end
 end
