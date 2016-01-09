@@ -1,106 +1,51 @@
 require 'spec_helper'
 
 describe Eiger::Controller, type: :controller do
-  class Page < Eiger::Controller
-    def index
-      'index'
+  class TestController < Eiger::Controller; end
+
+  describe '#get_child_or_self' do
+    let(:subject) { Eiger::Controller }
+
+    it 'returns Controller subclass' do
+      expect(subject.get_child_or_self(:test_controller)).to be(TestController)
     end
 
-    def show
-      'show'
+    it 'returns Controller class' do
+      expect(subject.get_child_or_self).to be(Eiger::Controller)
     end
 
-    def create
-      'create'
-    end
-
-    def update
-      'update'
-    end
-
-    def destroy
-      'destroy'
+    it 'returns nil for not defined subclass' do
+      expect { subject.get_child_or_self(:test) }.to raise_error(NameError)
     end
   end
 
-  class TestApp < Eiger::Base
-    route('/page', :page)
-  end
+  describe '#add_method' do
+    let(:subject) { Eiger::Controller }
+    let(:block) { -> { 'index' } }
+    let(:overwrite_block) { -> { 'overwrite' } }
 
-  let(:request) { Rack::MockRequest.new(TestApp) }
+    context 'when action not exists' do
+      it 'adds index method' do
+        expect(subject.method_defined?(:index)).to be false
+        subject.add_method(:index, &block)
+        expect(subject.method_defined?(:index)).to be true
+      end
 
-  describe '#index' do
-    it 'returns 200 status' do
-      response = request.get('/pages')
-      expect(response.status).to eq 200
+      it 'assigns block body to new method' do
+        subject.add_method(:index, &block)
+        expect(subject.new({}).index).to eq 'index'
+      end
     end
 
-    it 'returns hello text' do
-      response = request.get('/pages')
-      expect(response.body).to eq 'index'
-    end
-  end
+    context 'when action exists' do
+      before do
+        subject.add_method(:index, &block)
+      end
 
-  describe '#show' do
-    it 'returns 200 status' do
-      response = request.get('/page/12')
-      expect(response.status).to eq 200
-    end
-
-    it 'returns hello text' do
-      response = request.get('/page/12')
-      expect(response.body).to eq 'show'
-    end
-
-    it 'returns 404 status' do
-      response = request.get('/page/')
-      expect(response.status).to eq 404
-    end
-  end
-
-  describe '#create' do
-    it 'returns 200 status' do
-      response = request.post('/page')
-      expect(response.status).to eq 200
-    end
-
-    it 'returns hello text' do
-      response = request.post('/page')
-      expect(response.body).to eq 'create'
-    end
-  end
-
-  describe '#update' do
-    it 'returns 200 status' do
-      response = request.put('/page/12')
-      expect(response.status).to eq 200
-    end
-
-    it 'returns hello text' do
-      response = request.put('/page/12')
-      expect(response.body).to eq 'update'
-    end
-
-    it 'returns 404 status' do
-      response = request.put('/page')
-      expect(response.status).to eq 404
-    end
-  end
-
-  describe '#destroy' do
-    it 'returns 200 status' do
-      response = request.delete('/page/12')
-      expect(response.status).to eq 200
-    end
-
-    it 'returns hello text' do
-      response = request.delete('/page/12')
-      expect(response.body).to eq 'destroy'
-    end
-
-    it 'returns 404 status' do
-      response = request.delete('/page')
-      expect(response.status).to eq 404
+      it 'overwrites method' do
+        subject.add_method(:index, &overwrite_block)
+        expect(subject.new({}).index).to eq 'overwrite'
+      end
     end
   end
 end

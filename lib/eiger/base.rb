@@ -1,6 +1,10 @@
+# Eiger Module
 module Eiger
   # Base class for Eiger gem
   class Base
+    attr_accessor :route, :request
+    attr_reader :route_manager, :app
+
     class << self
       def get(path, &block)
         add_route('GET', path, &block)
@@ -19,37 +23,68 @@ module Eiger
       end
 
       def route(path, class_name)
-        add_route('GET', Controller.index_path(path), class_name, :index)
-        add_route('GET', Controller.show_path(path), class_name, :show)
-        add_route('PUT', Controller.update_path(path), class_name, :update)
-        add_route('POST', Controller.create_path(path), class_name, :create)
-        add_route('DELETE', Controller.destroy_path(path), class_name, :destroy)
+        path = path.to_s
+
+        add_route('GET', path, to: "#{class_name}#index")
+        add_route('GET', path + '/:id', to: "#{class_name}#show")
+        add_route('PUT', path + '/:id', to: "#{class_name}#update")
+        add_route('POST', path, to: "#{class_name}#create")
+        add_route('DELETE', path + '/:id', to: "#{class_name}#destroy")
+      end
+
+      def namespace(path)
+        @scope = Scope.new(path, scope)
+
+        yield
+      ensure
+        @scope = scope.parent
       end
 
       def call(env)
-        new(@routes).call!(env)
+        app.call!(env)
       end
 
-      def add_route(http_method, path, class_name = nil, action = nil, &block)
-        @routes ||= RouteManagement.new
-        @routes.add(http_method, path, class_name, action, &block)
+      def route_manager
+        @route_manager ||= RouteManager.new
       end
-      private :add_route
+
+      private
+
+      def scope
+        @scope ||= Scope.new
+      end
+
+      def app
+        @app ||= new
+      end
+
+      def add_route(method, *args, &block)
+        path                  = args.first
+        options               = args.extract_options!
+        options[:via]         = method
+        options[:scope_path]  = scope.absolute_path
+
+        route_manager.add(path, options, &block)
+      end
     end
 
-    def initialize(routes)
-      @routes = routes
+    def routes
+      self.class.route_manager
     end
 
     def call!(env)
       @request  = Rack::Request.new(env)
-      @route    = @routes.get_route(@request.request_method, @request.fullpath)
+      @route    = routes.match(@request.request_method, @request.path)
+      @response = Response.new(@route, @request)
 
-      if @route
-        [200, {}, [@route.call_method(@request)]]
-      else
-        [404, {}, ['Page not found']]
-      end
+      @response.process
+      @response.finish
     end
+  end
+
+  def self.new(base = Base, &block)
+    base = Class.new(base)
+    base.class_eval(&block) if block_given?
+    base
   end
 end

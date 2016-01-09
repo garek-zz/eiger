@@ -2,13 +2,13 @@ require 'spec_helper'
 
 describe Eiger::Base, type: :controller do
   describe 'GET' do
-    class TestApp < Eiger::Base
-      get('/') {}
-      get('/name/:name') { params[:name] }
-      get(%r{^\/regexp$}) {}
+    let(:request) do
+      mock_request do
+        get('/') {}
+        get('/name/:name') { params[:name] }
+        get(%r{^\/regexp$}) {}
+      end
     end
-
-    let(:request) { Rack::MockRequest.new(TestApp) }
 
     context 'String route' do
       it 'returns 200 status' do
