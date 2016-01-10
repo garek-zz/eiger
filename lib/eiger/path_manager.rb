@@ -22,7 +22,7 @@ module Eiger
       elsif path_pattern.is_a? Regexp
         true
       else
-        fail TypeError, "Path must be String or Regexp type"
+        fail TypeError, 'Path must be String or Regexp type'
       end
     end
 

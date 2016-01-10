@@ -17,24 +17,24 @@ run Eiger::Base
 
 # simple route
 get '/' do
-  'Hello world!'
+ 'Hello world!'
 end
 
 # route with named parameter
 get '/:name' do
-  "Hello #{params[:name]}!"
+ "Hello #{params[:name]}!"
 end
 
 # route with wildcard parameter
 get '/foo/*' do
-  "This is wildcard route with #{params[:splat].inspect}"
+ "This is wildcard route with #{params[:splat].inspect}"
 end
 
 # namespaced route
 namespace :foo do
-  get '/bar' do
-   "Foo Bar"
-  end
+ get '/bar' do
+  "Foo Bar"
+ end
 end
 
 # resource route
@@ -47,11 +47,12 @@ Install the gem:
 # Gemfile
 gem 'eiger', github: "garek/eiger"
 ```
+Note that Rack, which is Eiger's direct dependency will be automatically fetched and added by Bundler.
 
 And run with:
 
 ```shell
-rackup myapp.rb
+rackup
 ```
 
 View at: http://localhost:9292
@@ -62,11 +63,11 @@ View at: http://localhost:9292
 * [Eiger](#eiger)
 * [Instalation](#instalation)
 * [Routes](#routes)
-    * [Named parameters](#named-parameters)
-    * [Wildcard parameters](#wildcard-parameters)
-    * [Namespaces](#namespaces)
-    * [Resource routes](#resource-routes)
-* [Controllers](#controllers)
+   * [Named parameters](#named-parameters)
+   * [Wildcard parameters](#wildcard-parameters)
+   * [Query parameters](#query-parameters)
+   * [Namespaces](#namespaces)
+   * [Resource routes](#resource-routes)
 * [Example application](#example-application)
 
 ## Instalation
@@ -96,23 +97,23 @@ Each route is associated with a block:
 
 ```ruby
 get '/foo' do
-  .. show something ..
+ .. show something ..
 end
 
 post '/foo' do
-  .. create something ..
+ .. create something ..
 end
 
 put '/foo' do
-  .. replace something ..
+ .. replace something ..
 end
 
 patch '/foo' do
-  .. modify something ..
+ .. modify something ..
 end
 
 delete '/foo' do
-  .. destroy something ..
+ .. destroy something ..
 end
 
 ```
@@ -120,15 +121,15 @@ end
 Routes are matched in the order they are defined. The first route that
 matches the request is invoked.
 
-## Parameters
+## Named parameters
 Route patterns may include named parameters, accessible via the
 `params` hash:
 
 ```ruby
 get '/hello/:name' do
-  # matches "GET /hello/foo" and "GET /hello/bar"
-  # params['name'] is 'foo' or 'bar'
-  "Hello #{params['name']}!"
+ # matches "GET /hello/foo" and "GET /hello/bar"
+ # params['name'] is 'foo' or 'bar'
+ "Hello #{params['name']}!"
 end
 ```
 
@@ -138,20 +139,81 @@ via the `params['splat']` array:
 
 ```ruby
 get '/say/*/to/*' do
-  # matches /say/hello/to/world
-  params['splat'] # => ["hello", "world"]
+ # matches /say/hello/to/world
+ params['splat'] # => ["hello", "world"]
 end
-
 ```
 
+## Query parameters
 Routes may also utilize query parameters:
 
 ```ruby
 get '/posts' do
-  # matches "GET /posts?title=foo&author=bar"
-  title = params['title']
-  author = params['author']
-  # uses title and author variables; query is optional to the /posts route
+ # matches "GET /posts?title=foo&author=bar"
+ title = params['title']
+ author = params['author']
+ # uses title and author variables; query is optional to the /posts route
 end
 ```
 
+## Namespaces
+Routes may also be namespaced:
+
+```ruby
+namespace :foo do
+ get '/bar' do
+  # matches "GET /foo/bar"
+  "Foo Bar"
+ end
+end
+```
+
+## Resource routes
+A set of resource routes may be specified shortly:
+
+```ruby
+route 'post', 'post_controller'  
+# will generate a set of paths and match them with controller actions:
+# GET   /post       -> PostController#index
+# GET   /post/:id   -> PostController#show
+# POST  /post       -> PostController#create
+# PUT   /post/:id   -> PostController#update
+# DELETE /post/:id  -> PostController#destroy
+```
+
+In Eiger::Controller subclass you can specify `index`, `show`, `create`, `update` and `destroy` actions which will be automaticaly matched with resource routes.
+
+```ruby
+class PostController < Eiger::Controller
+
+ # match GET /post
+ def index
+   "... index ..."
+ end
+
+ # match GET /post/:id
+ def show
+   "... show post ..."
+ end
+ # match POST /post
+ def create
+   "... create post ..."
+ end
+
+ # match PUT /post/:id
+ def update
+   "... update post ..."
+ end
+
+ # match DELETE /post/:id
+ def destroy
+   "... destroy post ..."
+ end
+
+end
+```
+
+
+## Example application
+
+Example application using Eiger can be downloaded from [here](http://github.com/garek/eiger_examples)

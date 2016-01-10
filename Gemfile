@@ -1,7 +1,6 @@
 source 'https://rubygems.org'
 
 gem 'rack'
-gem 'rubocop'
 
 group :test do
   gem 'rack-test'
