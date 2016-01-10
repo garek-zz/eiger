@@ -24,6 +24,7 @@ module Eiger
 
       def route(path, class_name)
         path = path.to_s
+        path = '/' + path unless path.start_with?('/')
 
         add_route('GET', path, to: "#{class_name}#index")
         add_route('GET', path + '/:id', to: "#{class_name}#show")

@@ -41,3 +41,13 @@ class RegexpLookAlike
     %w(one two three four)
   end
 end
+
+class TestApp < Eiger::Controller
+  def index
+    'index'
+  end
+
+  def show
+    params['id']
+  end
+end

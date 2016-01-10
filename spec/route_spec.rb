@@ -2,9 +2,6 @@ require 'spec_helper'
 require 'minitest/autorun'
 
 describe Eiger::Route do
-  class TestApp < Eiger::Controller
-  end
-
   let(:foo) { '/foo' }
   let(:bar) { '/bar' }
   let(:block) { -> { 'test' } }
@@ -24,7 +21,7 @@ describe Eiger::Route do
 
   describe '#call_method' do
     it 'calls index method in TestApp class' do
-      expect(subject.call_method(request)).to eq 'test'
+      expect(subject.call_method(request)).to eq 'index'
     end
   end
 

@@ -14,7 +14,7 @@ module Eiger
 
       @status = 200
       @body   = [@route.call_method(@request)]
-    rescue Exception => e # rubocop:disable RescueException
+    rescue => e
       error_page(e)
     end
 

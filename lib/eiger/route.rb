@@ -29,7 +29,9 @@ module Eiger
     private
 
     def add_method(&block)
-      controller.add_method(action, &block) if path_manager.valid?
+      return unless path_manager.valid? && controller == Eiger::Controller
+
+      controller.add_method(action, &block)
     end
   end
 end

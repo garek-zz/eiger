@@ -11,9 +11,9 @@ module Eiger
     end
 
     def match(path)
-      path = URI.unescape(path.dup)
+      subpath = unscope_path(path)
 
-      match_scope(path) && match_path(path.sub(scope_path, ''))
+      match_scope(path) && match_path(subpath)
     end
 
     def valid?
@@ -22,40 +22,45 @@ module Eiger
       elsif path_pattern.is_a? Regexp
         true
       else
-        fail TypeError, path_pattern
+        fail TypeError, "Path must be String or Regexp type"
       end
     end
 
     def params(path)
       return {} if path_pattern.is_a?(Regexp)
 
-      segments = path.split('/')
-
-      path_segments.each_with_index.each_with_object({}) do |(seg, i), params|
-        seg.match(/(:\w+)|(\*)/) do
-          if $1
-            params[seg[1..-1].to_s] = URI.unescape(segments[i])
-          elsif $2
-            (params['splat'] ||= []) << splat_param(segments, i)
-          end
-        end
-      end
+      path = unscope_path(path)
+      segments = prepare_segments(path)
+      segments_param(segments)
     end
 
     private
 
-    def splat_param(segments, index)
-      if path_segments.size == index + 1
-        URI.unescape(segments[index..-1].join('/'))
-      else
-        URI.unescape(segments[index])
+    def unscope_path(path)
+      path.sub(scope_path, '')
+    end
+
+    def segments_param(segments)
+      path_segments.each_with_index.each_with_object({}) do |(seg, i), params|
+        seg.match(/(:\w+)|(\*)/) do
+          params[seg[1..-1].to_s] = URI.unescape(segments[i]) if $1
+          (params['splat'] ||= []) << segments[i] if $2
+        end
       end
     end
 
-    # VALIDATION METHODS
+    def prepare_segments(path)
+      if path_segments.last =~ /\*$/
+        segments = path.split('/', path_segments.size)
+      else
+        segments = path.split('/')
+      end
+
+      segments.map { |segment| URI.unescape(segment) }
+    end
 
     def valid_string?
-      fail TypeError, path_pattern unless path_pattern =~ /^\//
+      fail TypeError, "Path must starts with '/'" unless path_pattern =~ /^\//
 
       path_pattern[1..-1].split('/').all? do |segment|
         valid_segment?(segment)
@@ -68,29 +73,19 @@ module Eiger
       end
     end
 
-    # MATCH PATH METHODS
-
     def match_path(path)
       if path_pattern.is_a?(Regexp)
-        match_regexp_path(path)
+        path =~ path_pattern
       elsif path_pattern.is_a?(String)
-        match_string_path(path)
+        segments = prepare_segments(path)
+
+        segments.size == path_segments.size && match_path_segments(segments)
       end
     end
 
     def match_scope(path)
+      path = URI.unescape(path.dup)
       path.start_with?(scope_path)
-    end
-
-    def match_regexp_path(path)
-      path =~ path_pattern
-    end
-
-    def match_string_path(path)
-      segments = path.split('/')
-
-      (path_segments.size != 0 || segments.size == path_segments.size) &&
-        match_path_segments(segments)
     end
 
     def match_path_segments(segments)

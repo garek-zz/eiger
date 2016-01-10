@@ -1,3 +1,4 @@
+require 'rack'
 require 'eiger/base'
 require 'eiger/delegator'
 require 'eiger/route'

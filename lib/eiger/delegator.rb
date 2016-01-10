@@ -10,7 +10,7 @@ module Eiger
       end
     end
 
-    delegate :get, :post, :put, :delete, :route
+    delegate :get, :post, :put, :delete, :route, :namespace
 
     class << self
       attr_accessor :target

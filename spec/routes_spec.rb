@@ -159,24 +159,24 @@ describe 'routes' do
   it 'exposes nested params with indifferent hash' do
     mock_request do
       get '/testme' do
-        'well, alright'
+        params['bar']['foo']
       end
     end
 
     get '/testme?bar[foo]=baz'
-    expect(body).to eq 'well, alright'
+    expect(body).to eq 'baz'
   end
 
   it 'exposes params nested within arrays with indifferent hash' do
     mock_request do
       get '/testme' do
-        'well, alright'
+        params['bar'][0]['foo']
       end
     end
 
     get '/testme?bar[][foo]=baz'
     expect(status).to eq 200
-    expect(body).to eq 'well, alright'
+    expect(body).to eq 'baz'
   end
 
   it 'supports arrays within params' do
@@ -312,5 +312,43 @@ describe 'routes' do
 
     get('/ABC/foo')
     expect(status).to eq 404
+  end
+
+  it 'returns page not found for invalid param' do
+    mock_request do
+      get('/:name') {}
+    end
+
+    get('/name/foo')
+    expect(status).to eq 404
+  end
+
+  context 'namespace' do
+    it 'matches param for scoped controller method' do
+      mock_request do
+        namespace :foo do
+          route :bar, :test_app
+        end
+      end
+
+      get('/foo/bar')
+      expect(body).to eq 'index'
+
+      get('/foo/bar/12')
+      expect(body).to eq '12'
+    end
+
+    it 'matches param for scoped get method' do
+      mock_request do
+        namespace :foo do
+          get '/bar/:name' do
+            params[:name]
+          end
+        end
+      end
+
+      get('/foo/bar/test')
+      expect(body).to eq 'test'
+    end
   end
 end
