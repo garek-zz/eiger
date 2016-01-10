@@ -1,9 +1,9 @@
 Gem::Specification.new do |s|
   s.name        = 'eiger'
-  s.version     = '0.0.4'
+  s.version     = '0.0.5'
   s.date        = '2015-12-09'
   s.summary     = 'Hello!'
-  s.description = 'Eiger is a DSL for Ruba web applications'
+  s.description = 'Eiger is a DSL for Ruby web applications'
   s.authors     = ['Marek Gajewski']
   s.email       = 'marek.tomasz.gajewski@gmail.com'
   s.files       = ['lib/eiger.rb',
