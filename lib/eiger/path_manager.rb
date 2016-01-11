@@ -42,7 +42,7 @@ module Eiger
 
     def segments_param(segments)
       path_segments.each_with_index.each_with_object({}) do |(seg, i), params|
-        seg.match(/(:\w+)|(\*)/) do
+        seg.match(/(:[^\/])|(\*)/) do
           params[seg[1..-1].to_s] = URI.unescape(segments[i]) if $1
           (params['splat'] ||= []) << segments[i] if $2
         end
@@ -68,9 +68,7 @@ module Eiger
     end
 
     def valid_segment?(segment)
-      URI.encode(segment).match(/((:\w+)|(\w+)|(\*))/) do
-        ($1 && $1 == segment) || ($2 && $2 == segment) || $3
-      end
+      segment.match(/^:[^\/]+|[^\/]+|\*$/)
     end
 
     def match_path(path)
@@ -90,7 +88,7 @@ module Eiger
 
     def match_path_segments(segments)
       path_segments.each.with_index.reduce(true) do |memo, (seg, i)|
-        memo && ((seg =~ /^:\w|\*/ && !segments[i].nil?) || seg == segments[i])
+        memo && ((seg =~ /^:[^\/]|\*/ && !segments[i].nil?) || seg == segments[i])
       end
     end
   end
