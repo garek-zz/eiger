@@ -74,8 +74,8 @@ describe 'routes' do
       end
     end
 
-    get('/bar/foo/bling/baz/boom')
-    expect(body).to eq 'bar bling baz/boom'
+    get('/bar/foo/bling/baz')
+    expect(body).to eq 'bar bling baz'
 
     get '/bar/foo/baz'
     expect(status).to eq 404
@@ -114,15 +114,6 @@ describe 'routes' do
 
     get '/test$/'
     expect(status).to eq 200
-  end
-
-  it 'literally matches plus sign in paths' do
-    mock_request { get('/te+st/') {} }
-
-    get '/te%2Bst/'
-    expect(status).to eq 200
-    get '/teeeeeeest/'
-    expect(status).to eq 404
   end
 
   it '0' do
@@ -216,18 +207,6 @@ describe 'routes' do
     expect(body).to eq 'looks good'
   end
 
-  # it 'matches paths that include spaces encoded with +' do
-  #   mock_request do
-  #     get '/path with spaces' do
-  #       'looks good'
-  #     end
-  #   end
-
-  #   get('/path+with+spaces')
-  #   expect(status).to eq 200
-  #   expect(body).to eq 'looks good'
-  # end
-
   it 'matches paths that include ampersands' do
     mock_request do
       get '/:name' do
@@ -305,7 +284,7 @@ describe 'routes' do
 
   it 'does not match regexp scope' do
     mock_request do
-      namespace(/^[A-Z]$/) do
+      namespace(/\/^[A-Z]+$/) do
         get('/foo') { 'bar' }
       end
     end
@@ -349,6 +328,17 @@ describe 'routes' do
 
       get('/foo/bar/test')
       expect(body).to eq 'test'
+    end
+
+    it 'matchs regexp scope' do
+      mock_request do
+        namespace(:scope) do
+          get(%r{^/[A-Z]+$}) { 'bar' }
+        end
+      end
+
+      get('/scope/ABC')
+      expect(status).to eq 200
     end
   end
 end

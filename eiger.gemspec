@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'eiger'
-  s.version     = '0.0.5'
+  s.version     = '0.0.6'
   s.date        = '2015-12-09'
   s.summary     = 'Hello!'
   s.description = 'Eiger is a DSL for Ruby web applications'

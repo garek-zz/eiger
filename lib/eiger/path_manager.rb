@@ -1,95 +1,93 @@
 module Eiger
-  # rubocop:disable PerlBackrefs,RegexpLiteral
   # class PathManager
   class PathManager
-    attr_reader :path_pattern, :scope_path, :path_segments, :params
+    class << self
+      def init(path, scope_path = '')
+        return StringPath.new(path, scope_path) if path.is_a?(String)
+        return RegexpPath.new(path, scope_path) if path.is_a?(Regexp)
 
-    def initialize(path, scope_path = '')
-      @path_pattern   = path
-      @scope_path     = scope_path
-      @path_segments  = path.split('/') if path.is_a?(String)
-    end
+        fail TypeError, 'Invalid path type, allowed only String or Regexp type!'
+      end
 
-    def match(path)
-      subpath = unscope_path(path)
+      def valid?(path)
+        return path.match("[/[:[^\/]+|[^\/]+|\*]]*") if path.is_a? String
+        return true if path.is_a? Regexp
 
-      match_scope(path) && match_path(subpath)
-    end
-
-    def valid?
-      if path_pattern.is_a? String
-        valid_string?
-      elsif path_pattern.is_a? Regexp
-        true
-      else
         fail TypeError, 'Path must be String or Regexp type'
       end
     end
+  end
+
+  # class RegexpPath
+  class RegexpPath
+    attr_reader :pattern, :scope_path
+
+    def initialize(path, scope_path = '')
+      @scope_path = Regexp.new(scope_path)
+      @pattern    = path
+    end
+
+    def match(path)
+      unscoped_path(path).match(@pattern)
+    end
 
     def params(path)
-      return {} if path_pattern.is_a?(Regexp)
+      r = unscoped_path(path).match(@pattern)
 
-      path = unscope_path(path)
-      segments = prepare_segments(path)
-      segments_param(segments)
+      params = {}
+
+      r.names.each do |name|
+        params[name] = URI.unescape(r[name])
+      end if r
+
+      params
+    end
+
+    protected
+
+    def unscoped_path(path)
+      path.sub(@scope_path, '')
+    end
+  end
+
+  # class StringPath
+  class StringPath < RegexpPath
+    attr_reader :splat_pattern
+
+    def initialize(path, scope_path = '')
+      @pattern        = regexp_path(path)
+      @splat_pattern  = regexp_splat(path)
+      super(pattern, scope_path)
+    end
+
+    def params(path)
+      params = super(path)
+
+      # match params * from path to 'splat' variable
+      rr = unscoped_path(path).match(@splat_pattern)
+      params['splat'] = rr.captures.map { |p| p } if rr
+
+      params
     end
 
     private
 
-    def unscope_path(path)
-      path.sub(scope_path, '')
+    def escape(path)
+      URI.escape(path).gsub(/(\(|\)|\$|\.)/) { |r| Regexp.escape(r) }
     end
 
-    def segments_param(segments)
-      path_segments.each_with_index.each_with_object({}) do |(seg, i), params|
-        seg.match(/(:[^\/])|(\*)/) do
-          params[seg[1..-1].to_s] = URI.unescape(segments[i]) if $1
-          (params['splat'] ||= []) << segments[i] if $2
-        end
-      end
+    # Prepare regexp for params like :name, :foo, :bar
+    def regexp_path(path)
+      path = escape(path)
+      pre_path = path.gsub('*', '.*').gsub(%r{/\:([^\/]+)}, '/(?<\1>[^\/]+)')
+      Regexp.new("^#{pre_path}$")
     end
 
-    def prepare_segments(path)
-      if path_segments.last =~ /\*$/
-        segments = path.split('/', path_segments.size)
-      else
-        segments = path.split('/')
-      end
-
-      segments.map { |segment| URI.unescape(segment) }
-    end
-
-    def valid_string?
-      fail TypeError, "Path must starts with '/'" unless path_pattern =~ /^\//
-
-      path_pattern[1..-1].split('/').all? do |segment|
-        valid_segment?(segment)
-      end
-    end
-
-    def valid_segment?(segment)
-      segment.match(/^:[^\/]+|[^\/]+|\*$/)
-    end
-
-    def match_path(path)
-      if path_pattern.is_a?(Regexp)
-        path =~ path_pattern
-      elsif path_pattern.is_a?(String)
-        segments = prepare_segments(path)
-
-        segments.size == path_segments.size && match_path_segments(segments)
-      end
-    end
-
-    def match_scope(path)
-      path = URI.unescape(path.dup)
-      path.start_with?(scope_path)
-    end
-
-    def match_path_segments(segments)
-      path_segments.each.with_index.reduce(true) do |memo, (seg, i)|
-        memo && ((seg =~ /^:[^\/]|\*/ && !segments[i].nil?) || seg == segments[i])
-      end
+    # Prepare regexp for params * type
+    def regexp_splat(path)
+      path = escape(path)
+      pre_path = path.gsub('*', '(.*)').gsub(%r{/\:([^\/]+)}, '/[^\/]+')
+      Regexp.new("^#{pre_path}$")
     end
   end
 end
