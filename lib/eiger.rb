@@ -12,3 +12,4 @@ require 'eiger/core_ext/hash'
 require 'eiger/core_ext/string'
 
 extend Eiger::Delegator
+
